@@ -1,0 +1,44 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Cordova
+      run: npm install -g cordova
+
+    - name: Create Cordova App & Inject HTML
+      run: |
+        cordova create app com.vanitybag.app "Vanity Bag"
+        cp index.html app/www/index.html
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Build Android APK
+      run: |
+        cd app
+        cordova platform add android
+        cordova build android --no-telemetry
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VanityBag-APK
+        path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        
