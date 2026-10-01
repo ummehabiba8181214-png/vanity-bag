@@ -78,60 +78,89 @@
   </style>
 </head>
 <body>
-  <main id="v">Loading...</main>
+  <main id="v">Loading Database...</main>
   <nav id="nv"></nav>
   <div id="m"></div>
   <div id="t"></div>
   <div id="ask"></div>
 
   <script>
-    window.onerror = function(m, u, l) {
-      var v = document.getElementById('v');
-      if (v) {
-        v.innerHTML = '<div style="padding:16px;text-align:center;"><h3>Something went wrong</h3><p style="color:#c33;font-size:13px;">Error: ' + m + '</p><button class="b pr" onclick="localStorage.clear();location.reload();">Reset App Cache</button></div>';
-      }
-    };
+    const $ = s => document.querySelector(s);
 
-    const K = 'glowshelf1', CATS = ['Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools'], E = {Skincare: '🧴', Makeup: '💄', Haircare: '💇‍♀️', Fragrance: '🌸', Tools: '🪞'};
+    // Fail-safe crash handler
+    window.addEventListener('error', function(e) {
+      let mainEl = $('#v');
+      if (mainEl) {
+        mainEl.innerHTML = '<div style="padding:20px;text-align:center;"><h3>Execution Error</h3><p style="color:var(--er);font-size:13px;">' + (e.message || 'Error occurred') + '</p><button class="b pr" onclick="resetDB()">Reset All Data</button></div>';
+      }
+    });
+
+    // --- INDEXEDDB IMPLEMENTATION (Storage Overfill Fix) ---
+    const DB_NAME = 'GlowShelfDB', DB_VER = 1;
+    let db;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        let req = indexedDB.open(DB_NAME, DB_VER);
+        req.onupgradeneeded = e => {
+          let d = e.target.result;
+          if (!d.objectStoreNames.contains('app_state')) {
+            d.createObjectStore('app_state', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = e => { db = e.target.result; resolve(db); };
+        req.onerror = e => reject(e);
+      });
+    }
+
+    function saveStateToDB() {
+      if (!db) return;
+      let tx = db.transaction('app_state', 'readwrite');
+      tx.objectStore('app_state').put({ id: 'data', state: S });
+    }
+
+    function loadStateFromDB() {
+      return new Promise((resolve) => {
+        if (!db) return resolve(null);
+        let tx = db.transaction('app_state', 'readonly');
+        let req = tx.objectStore('app_state').get('data');
+        req.onsuccess = e => resolve(e.target.result ? e.target.result.state : null);
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    function resetDB() {
+      if (db) db.close();
+      let req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => location.reload();
+      req.onerror = () => { localStorage.clear(); location.reload(); };
+    }
+
+    // --- APP STATE & LOGIC ---
+    const CATS = ['Skincare', 'Makeup', 'Haircare', 'Fragrance', 'Tools'], E = {Skincare: '🧴', Makeup: '💄', Haircare: '💇‍♀️', Fragrance: '🌸', Tools: '🪞'};
     let PH = '', tt, hp = 0, mp = 0, ign = 0;
 
     function toast(m, u) {
       let t = $('#t');
       if(!t) return;
       t.innerHTML = '<span>' + m + '</span>' + (u ? '<button id="tu">Undo</button>' : '');
-      t.style.opacity = 1; t.style.pointerEvents = u ? 'auto' : 'none';
+      t.style.opacity = '1'; t.style.pointerEvents = u ? 'auto' : 'none';
       clearTimeout(tt);
-      tt = setTimeout(() => { t.style.opacity = 0; t.style.pointerEvents = 'none'; }, u ? 7000 : 2400);
-      if (u && $('#tu')) $('#tu').onclick = () => { u(); t.style.opacity = 0; t.style.pointerEvents = 'none'; };
+      tt = setTimeout(() => { if(t) { t.style.opacity = '0'; t.style.pointerEvents = 'none'; } }, u ? 7000 : 2400);
+      let tu = $('#tu');
+      if (u && tu) tu.onclick = () => { u(); t.style.opacity = '0'; t.style.pointerEvents = 'none'; };
     }
     window.alert = m => toast(m);
 
     let S = { p: [], r: [], l: [], pan: [], look: [], h: [] }, tab = 'home', f = 'All', rt = 'AM', sub = '', q = '';
-    
-    try { 
-      let raw = localStorage.getItem(K);
-      if (raw) S = Object.assign(S, JSON.parse(raw)); 
-    } catch (e) {
-      console.error("Storage corrupted, resetting state", e);
-    }
 
-    S.p = Array.isArray(S.p) ? S.p : [];
-    S.r = Array.isArray(S.r) ? S.r : [];
-    S.l = Array.isArray(S.l) ? S.l : [];
-    S.pan = Array.isArray(S.pan) ? S.pan : [];
-    S.look = Array.isArray(S.look) ? S.look : [];
-    S.h = Array.isArray(S.h) ? S.h : [];
-
-    S.p.forEach(p => { if (p && p.done && p.qty > 0) p.qty = 0; });
-    try { history.replaceState({ tab: 'home', sub: '' }, ''); } catch (e) {}
-
-    const save = () => {
-      try { localStorage.setItem(K, JSON.stringify(S)); } catch (e) { alert('Storage full. Copy a backup, then remove some photos.'); }
-    };
-    const $ = s => document.querySelector(s), uid = () => Math.random().toString(36).slice(2, 9), td = () => new Date().toISOString().slice(0, 10), v = i => ($('#' + i) ? $('#' + i).value : '');
+    const save = () => { saveStateToDB(); };
+    const uid = () => Math.random().toString(36).slice(2, 9), td = () => new Date().toISOString().slice(0, 10);
+    const v = i => ($('#' + i) ? $('#' + i).value : '');
     const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-    const P = id => S.p.find(x => x && x.id == id), money = n => (S.cur || '€') + (+n || 0).toFixed(2), val = () => S.p.reduce((a, p) => a + ((p.price || 0) * (p.qty || 0)), 0);
-    
+    const P = id => S.p.find(x => x && x.id == id), money = n => (S.cur || '€') + (+n || 0).toFixed(2);
+    const val = () => S.p.reduce((a, p) => a + ((p.price || 0) * (p.qty || 0)), 0);
+
     const exp = p => {
       if(!p) return null;
       let d = [];
@@ -139,7 +168,7 @@
       if (p.opened && p.pao) { let o = new Date(p.opened); o.setMonth(o.getMonth() + +p.pao); d.push(o); }
       return d.length ? new Date(Math.min(...d)) : null;
     };
-    
+
     const left = p => { let e = exp(p); return e ? Math.ceil((e - new Date(td())) / 864e5) : null; };
     const uses = p => S.l.filter(x => x && x.pid == p.id).length, cpu = p => uses(p) ? (p.price || 0) / uses(p) : 0;
     const badge = p => {
@@ -148,51 +177,52 @@
     };
 
     const img = (file, cb) => {
+      if(!file) return;
       let r = new FileReader();
       r.onload = () => {
         let i = new Image();
         i.onload = () => {
-          let c = document.createElement('canvas'), s = Math.min(1, 900 / Math.max(i.width, i.height));
+          let c = document.createElement('canvas');
+          let ctx = c.getContext('2d');
+          if (!ctx) return cb(r.result);
+          let s = Math.min(1, 900 / Math.max(i.width, i.height));
           c.width = i.width * s; c.height = i.height * s;
-          c.getContext('2d').drawImage(i, 0, 0, c.width, c.height);
+          ctx.drawImage(i, 0, 0, c.width, c.height);
           cb(c.toDataURL('image/jpeg', .72));
         };
-        i.onerror = () => alert('Could not read this photo. Try another one.');
+        i.onerror = () => alert('Invalid image file.');
         i.src = r.result;
       };
       r.readAsDataURL(file);
     };
 
-    if (!S.seeded || S.p.length === 0) {
-      S.seeded = 1; let a = uid(), b = uid(), c = uid();
-      S.p = [
-        { id: a, cat: 'Skincare', brand: 'Sample', name: 'Gentle Cleanser', price: 8, qty: 2, opened: td(), pao: 12, shade: '#d9799b' },
-        { id: b, cat: 'Skincare', brand: 'Sample', name: 'SPF 50', price: 14, qty: 1, opened: td(), pao: 6, shade: '#e0a24a' },
-        { id: c, cat: 'Makeup', brand: 'Sample', name: 'Rose Lipstick', price: 12, qty: 1, expiry: '2027-06-01', shade: '#d25c6c' }
-      ];
-      S.r = [
-        { id: uid(), name: 'Morning', type: 'AM', steps: [{ id: uid(), label: 'Cleanser', pid: a }, { id: uid(), label: 'Sunscreen', pid: b }] },
-        { id: uid(), name: 'Night', type: 'PM', steps: [{ id: uid(), label: 'Cleanser', pid: a }] }
-      ];
-      save();
-    }
-
     function modal(t, h, ok, del, lbl) {
-      if ($('#m').className != 'on') { try { history.pushState({ tab, sub, m: 1 }, ''); mp = 1; } catch (e) {} }
-      $('#m').innerHTML = `<div class="sh"><h3>${t}</h3>${h}<div class="row" style="margin-top:12px"><button class="b" onclick="cl()">Close</button>${del ? '<button class="b dn" id="md">Delete</button>' : ''}<button class="b pr" id="mo">${lbl || 'Save'}</button></div></div>`;
-      $('#m').className = 'on';
-      $('#mo').onclick = () => { if (ok() !== false) cl(); };
-      if (del && $('#md')) $('#md').onclick = () => ask('Delete this permanently?', () => { del(); cl(); });
+      let mEl = $('#m');
+      if (!mEl) return;
+      if (mEl.className != 'on') { try { history.pushState({ tab, sub, m: 1 }, ''); mp = 1; } catch (e) {} }
+      mEl.innerHTML = `<div class="sh"><h3>${t}</h3>${h}<div class="row" style="margin-top:12px"><button class="b" onclick="cl()">Close</button>${del ? '<button class="b dn" id="md">Delete</button>' : ''}<button class="b pr" id="mo">${lbl || 'Save'}</button></div></div>`;
+      mEl.className = 'on';
+      let mo = $('#mo'), md = $('#md');
+      if (mo) mo.onclick = () => { if (ok() !== false) cl(); };
+      if (del && md) md.onclick = () => ask('Delete this permanently?', () => { del(); cl(); });
     }
 
     function ask(msg, fn) {
-      $('#ask').innerHTML = `<div class="sh"><p>${msg}</p><div class="row"><button class="b" id="an">Cancel</button><button class="b dn" id="ay">Yes, delete</button></div></div>`;
-      $('#ask').className = 'on';
-      $('#an').onclick = () => $('#ask').className = '';
-      $('#ay').onclick = () => { $('#ask').className = ''; fn(); };
+      let askEl = $('#ask');
+      if (!askEl) return;
+      askEl.innerHTML = `<div class="sh"><p>${msg}</p><div class="row"><button class="b" id="an">Cancel</button><button class="b dn" id="ay">Yes, delete</button></div></div>`;
+      askEl.className = 'on';
+      let an = $('#an'), ay = $('#ay');
+      if (an) an.onclick = () => askEl.className = '';
+      if (ay) ay.onclick = () => { askEl.className = ''; fn(); };
     }
 
-    const cl = () => { $('#m').className = ''; if (mp) { mp = 0; ign = 1; history.back(); } save(); render(); };
+    const cl = () => { 
+      let mEl = $('#m'); 
+      if (mEl) mEl.className = ''; 
+      if (mp) { mp = 0; ign = 1; history.back(); } 
+      save(); render(); 
+    };
 
     function pForm(id) {
       PH = ''; let p = id ? (P(id) || {}) : { cat: 'Skincare', qty: 1, shade: '#d9799b' };
@@ -210,7 +240,7 @@
           <label class="b" style="text-align:center;color:var(--tx);margin:10px 0 0">📷 Camera<input type="file" accept="image/*" capture="environment" hidden onchange="phv(this)"></label>
           <label class="b" style="text-align:center;color:var(--tx);margin:10px 0 0">🖼️ Gallery<input id="f_ph" type="file" accept="image/*" hidden onchange="phv(this)"></label>
         </div>
-        <small id="phn" style="display:block;margin:6px 0">${p.ph ? 'Photo saved. Pick again to change it.' : 'No photo yet'}</small>
+        <small id="phn" style="display:block;margin:6px 0">${p.ph ? 'Photo saved.' : 'No photo yet'}</small>
         <img id="phi" src="${p.ph || ''}" style="width:100%;object-fit:contain;border-radius:12px;${p.ph ? '' : 'display:none'}">
         ${fl('notes', 'Notes')}
       `, () => {
@@ -223,8 +253,13 @@
 
     const phv = i => {
       let f = i.files[0]; if (!f) return;
-      $('#phn').textContent = 'Loading...';
-      img(f, d => { PH = d; $('#phn').textContent = 'Photo ready'; let e = $('#phi'); e.src = d; e.style.display = 'block'; });
+      let phn = $('#phn'); if (phn) phn.textContent = 'Loading...';
+      img(f, d => { 
+        PH = d; 
+        if (phn) phn.textContent = 'Photo ready'; 
+        let e = $('#phi'); 
+        if (e) { e.src = d; e.style.display = 'block'; }
+      });
     };
 
     const fin = id => {
@@ -349,10 +384,4 @@
       save(); rEdit(id);
     };
 
-    const nr = () => modal('New ' + rt + ' routine', `<label>Name<input id="rn" value="${rt} routine"></label>`, () => {
-      let n = v('rn').trim(); if (!n) return false;
-      let r = { id: uid(), name: n, type: rt, steps: [] };
-      S.r.push(r); save(); rEdit(r.id); return false;
-    }, null, 'Create');
-
-    const curF = () => modal('Currency', `<label>Symbol<input id="cu" value="${esc(S.cur 
+    const nr = () => modal('New ' + rt + ' routine', `<label>Name<input id="rn" value="${rt} routine"></label>`, () 
