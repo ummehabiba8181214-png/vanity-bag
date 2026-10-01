@@ -13,7 +13,9 @@
   --ac: #d9799b;
   --ac2: #f6dce6;
   --bd: #efe0e7;
+  --ok: #6fae8d;
   --wr: #e0a24a;
+  --er: #d25c6c;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -35,11 +37,9 @@ small { font-size: 12px; color: var(--mu); }
   padding: 14px;
   margin: 10px 0;
 }
-.c b { font-size: 22px; display: block; }
-
+.c b { font-size: 20px; display: block; }
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .g2 .c { margin: 0; }
-
 .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 
 .btn {
@@ -53,7 +53,20 @@ small { font-size: 12px; color: var(--mu); }
   cursor: pointer;
 }
 .btn.pr { background: var(--ac); color: #fff; border-color: var(--ac); }
+.btn.dn { color: var(--er); }
 .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 20px; }
+.ch {
+  border: 1px solid var(--bd);
+  background: var(--card);
+  color: var(--tx);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  margin: 0 4px 8px 0;
+  font-weight: 600;
+}
+.ch.on { background: var(--ac); color: #fff; border-color: var(--ac); }
 
 .pg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pc {
@@ -64,15 +77,23 @@ small { font-size: 12px; color: var(--mu); }
   display: flex;
   flex-direction: column;
   gap: 4px;
+  cursor: pointer;
 }
 .ph {
-  height: 100px;
+  height: 110px;
   border-radius: 14px;
   display: grid;
   place-items: center;
   font-size: 36px;
   background: var(--ac2);
+  overflow: hidden;
 }
+.ph img { width: 100%; height: 100%; object-fit: cover; }
+
+.tag { background: var(--ac2); border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.tag.er { background: var(--er); color: #fff; }
+.tag.wr { background: var(--wr); color: #fff; }
+.tag.ok { background: var(--ok); color: #fff; }
 
 .ck {
   display: flex;
@@ -82,24 +103,33 @@ small { font-size: 12px; color: var(--mu); }
   border-top: 1px solid var(--bd);
   font-size: 14px;
 }
+.ck input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--ac); }
+.ck.dn span { opacity: 0.5; text-decoration: line-through; }
 
 .bar-bg {
   background: var(--ac2);
   border-radius: 10px;
-  height: 10px;
+  height: 24px;
   width: 100%;
   overflow: hidden;
   margin-top: 6px;
+  position: relative;
 }
-.bar-fill {
-  background: var(--ac);
-  height: 100%;
+.bar-fill { background: var(--ac); height: 100%; opacity: 0.7; }
+.bar-txt {
+  position: absolute;
+  top: 0; left: 10px; right: 10px;
+  line-height: 24px;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
   padding: 10px;
-  margin: 6px 0 12px;
+  margin: 4px 0 10px;
   border: 1px solid var(--bd);
   border-radius: 10px;
   font-size: 14px;
@@ -109,9 +139,7 @@ input, select {
 
 nav {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   display: flex;
   background: var(--card);
   border-top: 1px solid var(--bd);
@@ -121,25 +149,49 @@ nav {
 nav button {
   flex: 1;
   border: 0;
-  font-size: 12px;
+  font-size: 11px;
   background: none;
   color: var(--mu);
   font-weight: 600;
   cursor: pointer;
 }
-nav button.on { color: var(--ac); }
+nav button.on { color: var(--ac); font-weight: 700; }
+
+#m, #ask {
+  display: none;
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: flex-end;
+}
+#m.on, #ask.on { display: flex; }
+.sh {
+  background: var(--bg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 22px 22px 0 0;
+  padding: 16px;
+  margin: 0 auto;
+}
 </style>
 </head>
 <body>
 
 <main id="v"></main>
 <nav id="nv"></nav>
+<div id="m"></div>
+<div id="ask"></div>
 
 <script>
 (function() {
-  var K = 'glowshelf_final_v1';
-  var E = { Skincare: '🧴', Makeup: '💄', Haircare: '💇', Fragrance: '🌸', Tools: '🪮' };
-  var S = { p: [], r: [], cur: '$', tab: 'home' };
+  var K = 'glowshelf1';
+  var CATS = ['Skincare','Makeup','Haircare','Fragrance','Tools'];
+  var E = { Skincare:'🧴', Makeup:'💄', Haircare:'💇', Fragrance:'🌸', Tools:'🪮' };
+
+  var S = { p:[], r:[], l:[], pan:[], look:[], h:[], cur:'€', tab:'home', f:'All', rt:'AM', sub:'', q:'' };
 
   function loadData() {
     try {
@@ -149,18 +201,20 @@ nav button.on { color: var(--ac); }
 
     if (!S.p || !S.p.length) {
       S.p = [
-        { id: '1', cat: 'Skincare', brand: 'Glow Recipe', name: 'Dew Drops', price: 35, exp: '2025-12' },
-        { id: '2', cat: 'Makeup', brand: 'Rare Beauty', name: 'Liquid Blush', price: 23, exp: '2025-08' },
-        { id: '3', cat: 'Fragrance', brand: 'Replica', name: 'Jazz Club', price: 95, exp: '2026-05' },
-        { id: '4', cat: 'Haircare', brand: 'Olaplex', name: 'No. 3 Treatment', price: 30, exp: '2025-11' }
+        { id:'1', cat:'Skincare', brand:'Glow Recipe', name:'Dew Drops', price:35, qty:1, opened:'2025-01-01', pao:12, shade:'#f6dce6' },
+        { id:'2', cat:'Makeup', brand:'Rare Beauty', name:'Liquid Blush', price:23, qty:1, expiry:'2026-12-01', shade:'#d25c6c' }
       ];
     }
     if (!S.r || !S.r.length) {
       S.r = [
-        { id: 'r1', name: 'Morning Glow Routine', steps: ['Cleanser', 'Vitamin C', 'Moisturizer', 'Sunscreen'] },
-        { id: 'r2', name: 'Night Repair Routine', steps: ['Cleansing Oil', 'Retinol', 'Night Cream'] }
+        { id:'r1', name:'Morning Routine', type:'AM', steps:[{ id:'s1', label:'Cleanser', pid:'1' }] },
+        { id:'r2', name:'Night Routine', type:'PM', steps:[{ id:'s2', label:'Moisturizer', pid:'1' }] }
       ];
     }
+    S.l = S.l || [];
+    S.pan = S.pan || [];
+    S.look = S.look || [];
+    S.h = S.h || [];
   }
 
   function saveData() {
@@ -168,44 +222,87 @@ nav button.on { color: var(--ac); }
   }
 
   function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   }
 
   function money(v) {
-    return (S.cur || '$') + Number(v || 0).toFixed(2);
+    return (S.cur || '€') + Number(v || 0).toFixed(2);
   }
 
-  function calcTotal() {
-    var t = 0;
-    for (var i = 0; i < S.p.length; i++) t += Number(S.p[i].price || 0);
-    return t;
+  function td() {
+    return new Date().toISOString().slice(0,10);
   }
 
-  window.switchTab = function(t) {
+  function P(id) {
+    for (var i=0; i<S.p.length; i++) if (S.p[i].id == id) return S.p[i];
+    return null;
+  }
+
+  function exp(p) {
+    var d = [];
+    if (p.expiry) d.push(new Date(p.expiry));
+    if (p.opened && p.pao) {
+      var o = new Date(p.opened);
+      o.setMonth(o.getMonth() + Number(p.pao));
+      d.push(o);
+    }
+    return d.length ? new Date(Math.min.apply(null, d)) : null;
+  }
+
+  function left(p) {
+    var e = exp(p);
+    if (!e) return null;
+    return Math.ceil((e - new Date(td())) / (1000 * 60 * 60 * 24));
+  }
+
+  function badge(p) {
+    var l = left(p);
+    if (l === null) return '';
+    if (l < 0) return '<span class="tag er">Expired</span>';
+    return '<span class="tag ' + (l <= 30 ? 'wr' : 'ok') + '">' + (l <= 60 ? l + 'd' : Math.round(l/30) + 'mo') + ' left</span>';
+  }
+
+  window.switchTab = function(t, sub) {
     S.tab = t;
+    S.sub = sub || '';
     render();
   };
 
-  window.addProduct = function() {
-    var name = document.getElementById('inp-name').value;
-    var brand = document.getElementById('inp-brand').value;
-    var cat = document.getElementById('inp-cat').value;
-    var price = document.getElementById('inp-price').value;
-    var exp = document.getElementById('inp-exp').value;
-
-    if (!name) { alert('Please enter product name!'); return; }
-
-    S.p.unshift({
-      id: String(Date.now()),
-      name: name,
-      brand: brand,
-      cat: cat,
-      price: Number(price) || 0,
-      exp: exp
-    });
-
+  window.toggleRoutineStep = function(rid, sid) {
+    var today = td();
+    var idx = -1;
+    for (var i=0; i<S.l.length; i++) {
+      if (S.l[i].d === today && S.l[i].sid === sid) { idx = i; break; }
+    }
+    if (idx >= 0) {
+      S.l.splice(idx, 1);
+    } else {
+      var r = S.r.find(function(x){ return x.id === rid; });
+      var step = r ? r.steps.find(function(s){ return s.id === sid; }) : null;
+      S.l.push({ d: today, sid: sid, pid: step ? step.pid : '', rid: rid });
+    }
     saveData();
-    switchTab('shelf');
+    render();
+  };
+
+  window.markUsedUp = function(id) {
+    var p = P(id);
+    if (!p || p.qty < 1) return;
+    p.qty = Number(p.qty) - 1;
+    p.fin = (Number(p.fin) || 0) + 1;
+    if (p.qty < 1) p.done = 1;
+    S.h.push({ id: String(Date.now()), pid: id, d: td() });
+    saveData();
+    render();
+  };
+
+  window.restoreItem = function(id) {
+    var p = P(id);
+    if (!p) return;
+    p.qty = 1;
+    p.done = 0;
+    saveData();
+    render();
   };
 
   function render() {
@@ -216,72 +313,208 @@ nav button.on { color: var(--ac); }
     var tab = S.tab || 'home';
 
     if (tab === 'home') {
+      var activeP = S.p.filter(function(p){ return !p.done; });
+      var totVal = activeP.reduce(function(a,p){ return a + (p.price * p.qty); }, 0);
+      var expCount = activeP.filter(function(p){ var l = left(p); return l !== null && l <= 30; }).length;
+
       var html = '<h1>Glow Shelf</h1><small>' + new Date().toDateString() + '</small>';
       html += '<div class="g2" style="margin-top:12px">';
-      html += '  <div class="c"><b>' + S.p.length + '</b><small>Shelf Products</small></div>';
-      html += '  <div class="c"><b>' + money(calcTotal()) + '</b><small>Total Value</small></div>';
-      html += '</div><h3>Daily Routines</h3>';
+      html += '  <div class="c"><b>' + activeP.reduce(function(a,p){ return a + Number(p.qty); },0) + '</b><small>Shelf Products</small></div>';
+      html += '  <div class="c"><b>' + money(totVal) + '</b><small>Total Value</small></div>';
+      html += '</div>';
 
-      for (var i = 0; i < S.r.length; i++) {
+      if (expCount > 0) {
+        html += '<div class="c" style="border-color:var(--wr);background:#fff9f0"><b style="color:var(--wr)">' + expCount + ' Items Expiring Soon</b><small>Check Expiry tab for details</small></div>';
+      }
+
+      html += '<h3>Daily Routines</h3>';
+      for (var i=0; i<S.r.length; i++) {
         var r = S.r[i];
         html += '<div class="c"><b style="font-size:16px;margin-bottom:8px">' + esc(r.name) + '</b>';
-        for (var j = 0; j < r.steps.length; j++) {
-          html += '<div class="ck"><span>' + esc(r.steps[j]) + '</span><span style="color:var(--mu)">✓</span></div>';
+        for (var j=0; j<r.steps.length; j++) {
+          var step = r.steps[j];
+          var isDone = S.l.some(function(x){ return x.d === td() && x.sid === step.id; });
+          var prod = P(step.pid);
+          html += '<div class="ck ' + (isDone?'dn':'') + '">';
+          html += '<span>' + esc(step.label) + (prod ? ' <small>(' + esc(prod.name) + ')</small>' : '') + '</span>';
+          html += '<input type="checkbox" ' + (isDone?'checked':'') + ' onchange="toggleRoutineStep(\'' + r.id + '\',\'' + step.id + '\')">';
+          html += '</div>';
         }
         html += '</div>';
       }
       v.innerHTML = html;
     }
     else if (tab === 'shelf') {
-      var html = '<div class="row"><h1>My Shelf</h1><button class="btn btn-sm pr" onclick="switchTab(\'add\')">+ Add Item</button></div>';
-      html += '<div class="pg" style="margin-top:12px">';
-      for (var k = 0; k < S.p.length; k++) {
-        var item = S.p[k];
-        html += '<div class="pc"><div class="ph">' + (E[item.cat] || '🧴') + '</div>';
-        html += '<b style="font-size:15px">' + esc(item.name) + '</b>';
-        html += '<small>' + esc(item.brand) + ' • ' + esc(item.cat) + '</small>';
-        if (item.exp) html += '<small style="color:var(--wr)">Exp: ' + esc(item.exp) + '</small>';
-        html += '<b style="font-size:14px;margin-top:auto">' + money(item.price) + '</b></div>';
+      var html = '<div class="row"><h1>My Shelf</h1><button class="btn btn-sm pr" onclick="openAddModal()">+ Add</button></div>';
+      
+      html += '<div style="margin:10px 0;">';
+      var filterCats = ['All'].concat(CATS).concat(['Used up']);
+      for (var f=0; f<filterCats.length; f++) {
+        var fc = filterCats[f];
+        html += '<button class="ch ' + (S.f === fc ? 'on' : '') + '" onclick="S.f=\'' + fc + '\';render()">' + fc + '</button>';
       }
       html += '</div>';
+
+      var list = S.p.filter(function(p){
+        if (S.f === 'Used up') return p.done;
+        if (p.done) return false;
+        if (S.f !== 'All' && p.cat !== S.f) return false;
+        return true;
+      });
+
+      html += '<div class="pg">';
+      for (var k=0; k<list.length; k++) {
+        var item = list[k];
+        html += '<div class="pc" onclick="openEditModal(\'' + item.id + '\')">';
+        html += '<div class="ph" style="background:' + (item.shade || '#f6dce6') + '33">' + (item.ph ? '<img src="' + item.ph + '">' : (E[item.cat]||'🧴')) + '</div>';
+        html += '<b style="font-size:15px">' + esc(item.name) + '</b>';
+        html += '<small>' + esc(item.brand) + ' • ' + esc(item.cat) + '</small>';
+        html += '<div class="row"><span class="tag">×' + item.qty + '</span>' + badge(item) + '</div>';
+        html += '<div class="row" style="margin-top:auto;padding-top:6px;"><b>' + money(item.price) + '</b>';
+        if (!item.done) {
+          html += '<button class="btn-sm" onclick="event.stopPropagation();markUsedUp(\'' + item.id + '\')">Used up</button>';
+        } else {
+          html += '<button class="btn-sm" onclick="event.stopPropagation();restoreItem(\'' + item.id + '\')">Restore</button>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+      v.innerHTML = html;
+    }
+    else if (tab === 'expiry') {
+      var expList = S.p.filter(function(p){ return !p.done && left(p) !== null; }).sort(function(a,b){ return left(a) - left(b); });
+      var html = '<h1>Expiry Tracker</h1>';
+      if (!expList.length) html += '<p class="mu" style="margin-top:10px">No products with expiry or PAO set.</p>';
+      for (var e=0; e<expList.length; e++) {
+        var px = expList[e];
+        html += '<div class="c"><div class="row"><b style="font-size:16px">' + esc(px.name) + '</b>' + badge(px) + '</div>';
+        html += '<small>' + esc(px.brand) + ' • Exp: ' + exp(px).toDateString() + '</small></div>';
+      }
       v.innerHTML = html;
     }
     else if (tab === 'stats') {
-      var totalVal = calcTotal();
+      var totalVal = S.p.filter(function(p){ return !p.done; }).reduce(function(a,p){ return a + (p.price * p.qty); }, 0);
       var cats = {};
-      for (var m = 0; m < S.p.length; m++) {
+      for (var m=0; m<S.p.length; m++) {
+        if (S.p[m].done) continue;
         var c = S.p[m].cat || 'Other';
-        cats[c] = (cats[c] || 0) + (Number(S.p[m].price) || 0);
+        cats[c] = (cats[c] || 0) + (Number(S.p[m].price * S.p[m].qty) || 0);
       }
-      var html = '<h1>Statistics</h1><div class="c"><small>Total Shelf Value</small><b style="color:var(--ac);font-size:28px;">' + money(totalVal) + '</b></div>';
-      html += '<h3>Category Breakdown</h3><div class="c">';
+      var html = '<h1>Statistics</h1><div class="c"><small>Total Active Value</small><b style="color:var(--ac);font-size:26px;">' + money(totalVal) + '</b></div>';
+      html += '<h3>Value by Category</h3><div class="c">';
       for (var catKey in cats) {
         var catVal = cats[catKey];
         var pct = totalVal > 0 ? Math.round((catVal / totalVal) * 100) : 0;
-        html += '<div style="margin-bottom:12px;"><div class="row"><span>' + (E[catKey] || '🧴') + ' ' + esc(catKey) + '</span><b>' + money(catVal) + ' (' + pct + '%)</b></div>';
-        html += '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%"></div></div></div>';
+        html += '<div style="margin-bottom:12px;"><div class="row"><span>' + (E[catKey]||'🧴') + ' ' + esc(catKey) + '</span><b>' + money(catVal) + ' (' + pct + '%)</b></div>';
+        html += '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%"></div><div class="bar-txt"><span>' + pct + '%</span></div></div></div>';
       }
       html += '</div>';
       v.innerHTML = html;
     }
-    else if (tab === 'add') {
-      var html = '<h1>Add Product</h1><div class="c">';
-      html += '<label><small>Product Name</small></label><input type="text" id="inp-name" placeholder="e.g. Dew Drops">';
-      html += '<label><small>Brand</small></label><input type="text" id="inp-brand" placeholder="e.g. Glow Recipe">';
-      html += '<label><small>Category</small></label><select id="inp-cat">';
-      html += '<option value="Skincare">Skincare 🧴</option><option value="Makeup">Makeup 💄</option><option value="Haircare">Haircare 💇</option><option value="Fragrance">Fragrance 🌸</option><option value="Tools">Tools 🪮</option></select>';
-      html += '<label><small>Price</small></label><input type="number" id="inp-price" placeholder="0.00">';
-      html += '<label><small>Expiration Date</small></label><input type="month" id="inp-exp">';
-      html += '<button class="btn pr" style="width:100%;margin-top:10px" onclick="addProduct()">Save To Shelf</button></div>';
+    else if (tab === 'more') {
+      if (S.sub === 'bk') {
+        var html = '<div class="row"><h1>Backup & Restore</h1><button class="btn btn-sm" onclick="switchTab(\'more\')">Back</button></div>';
+        html += '<textarea id="bt" rows="8" style="margin-top:10px"></textarea>';
+        html += '<button class="btn pr" style="width:100%" onclick="importBackup()">Import Data</button>';
+        v.innerHTML = html;
+        setTimeout(function(){ if(document.getElementById('bt')) document.getElementById('bt').value = JSON.stringify(S); }, 50);
+        return;
+      }
+      var html = '<h1>More Features</h1>';
+      html += '<button class="btn" style="width:100%;text-align:left;margin:6px 0;" onclick="switchTab(\'more\',\'bk\')">📦 Backup & Restore Data</button>';
+      html += '<button class="btn" style="width:100%;text-align:left;margin:6px 0;" onclick="changeCurrency()">💱 Change Currency (' + (S.cur||'€') + ')</button>';
       v.innerHTML = html;
     }
 
     nv.innerHTML = '' +
       '<button class="' + (tab==='home'?'on':'') + '" onclick="switchTab(\'home\')">Home</button>' +
-      '<button class="' + (tab==='shelf'?'on':'') + '" onclick="switchTab(\'shelf\')">My Shelf</button>' +
+      '<button class="' + (tab==='shelf'?'on':'') + '" onclick="switchTab(\'shelf\')">Shelf</button>' +
+      '<button class="' + (tab==='expiry'?'on':'') + '" onclick="switchTab(\'expiry\')">Expiry</button>' +
       '<button class="' + (tab==='stats'?'on':'') + '" onclick="switchTab(\'stats\')">Stats</button>' +
-      '<button class="' + (tab==='add'?'on':'') + '" onclick="switchTab(\'add\')">+ Add</button>';
+      '<button class="' + (tab==='more'?'on':'') + '" onclick="switchTab(\'more\')">More</button>';
   }
+
+  window.openAddModal = function() {
+    var modal = document.getElementById('m');
+    modal.innerHTML = '<div class="sh"><h3>Add Product</h3>' +
+      '<label><small>Product Name</small></label><input type="text" id="m-name">' +
+      '<label><small>Brand</small></label><input type="text" id="m-brand">' +
+      '<label><small>Category</small></label><select id="m-cat">' + CATS.map(function(c){ return '<option>' + c + '</option>'; }).join('') + '</select>' +
+      '<div class="g2"><label><small>Price</small></label><input type="number" id="m-price" value="10"></div>' +
+      '<div class="g2"><label><small>Quantity</small></label><input type="number" id="m-qty" value="1"></div>' +
+      '<label><small>Expiry Date</small></label><input type="date" id="m-exp">' +
+      '<div class="row" style="margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn pr" onclick="saveNewProduct()">Save</button></div></div>';
+    modal.className = 'on';
+  };
+
+  window.openEditModal = function(id) {
+    var p = P(id);
+    if(!p) return;
+    var modal = document.getElementById('m');
+    modal.innerHTML = '<div class="sh"><h3>Edit Product</h3>' +
+      '<label><small>Product Name</small></label><input type="text" id="m-name" value="' + esc(p.name) + '">' +
+      '<label><small>Brand</small></label><input type="text" id="m-brand" value="' + esc(p.brand) + '">' +
+      '<div class="g2"><label><small>Price</small></label><input type="number" id="m-price" value="' + p.price + '"></div>' +
+      '<div class="g2"><label><small>Quantity</small></label><input type="number" id="m-qty" value="' + p.qty + '"></div>' +
+      '<div class="row" style="margin-top:14px"><button class="btn dn" onclick="deleteProduct(\'' + p.id + '\')">Delete</button><button class="btn pr" onclick="updateProduct(\'' + p.id + '\')">Update</button></div></div>';
+    modal.className = 'on';
+  };
+
+  window.closeModal = function() { document.getElementById('m').className = ''; };
+
+  window.saveNewProduct = function() {
+    var name = document.getElementById('m-name').value;
+    if (!name) return alert('Enter name!');
+    S.p.push({
+      id: String(Date.now()),
+      name: name,
+      brand: document.getElementById('m-brand').value,
+      cat: document.getElementById('m-cat').value,
+      price: Number(document.getElementById('m-price').value) || 0,
+      qty: Number(document.getElementById('m-qty').value) || 1,
+      expiry: document.getElementById('m-exp').value
+    });
+    saveData();
+    closeModal();
+    render();
+  };
+
+  window.updateProduct = function(id) {
+    var p = P(id);
+    if (p) {
+      p.name = document.getElementById('m-name').value;
+      p.brand = document.getElementById('m-brand').value;
+      p.price = Number(document.getElementById('m-price').value) || 0;
+      p.qty = Number(document.getElementById('m-qty').value) || 1;
+      saveData();
+    }
+    closeModal();
+    render();
+  };
+
+  window.deleteProduct = function(id) {
+    S.p = S.p.filter(function(x){ return x.id !== id; });
+    saveData();
+    closeModal();
+    render();
+  };
+
+  window.importBackup = function() {
+    try {
+      var raw = document.getElementById('bt').value;
+      S = Object.assign(S, JSON.parse(raw));
+      saveData();
+      alert('Backup Imported!');
+      switchTab('home');
+    } catch(e) {
+      alert('Invalid JSON');
+    }
+  };
+
+  window.changeCurrency = function() {
+    var c = prompt('Enter Currency Symbol:', S.cur || '€');
+    if (c) { S.cur = c; saveData(); render(); }
+  };
 
   loadData();
   render();
