@@ -19,19 +19,21 @@ button,input,select,textarea{font-family:system-ui,sans-serif}
 .ph2{height:100px;border:1px dashed var(--mu);border-radius:12px;display:grid;place-items:center;overflow:hidden;font-size:13px;color:var(--mu);margin:0}
 .tag{background:var(--ac2);border-radius:99px;padding:2px 9px;font-size:12px;font-family:system-ui,sans-serif}.tag.er{background:var(--er);color:#fff}.tag.wr{background:var(--wr);color:#fff}.tag.ok{background:var(--ok);color:#fff}
 .ck{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--bd);margin:0;color:var(--tx);font-size:15px}.ck input{width:22px;height:22px;accent-color:var(--ac);margin:0}.ck.dn span{opacity:.5;text-decoration:line-through}
-.bar{position:relative;height:28px;background:var(--ac2);border-radius:9px;margin:6px 0;overflow:hidden}.bar i{position:absolute;inset:0 auto 0 0;background:var(--ac);opacity:.55}.bar span,.bar em{position:relative;padding:0 9px;line-height:28px;font-style:normal;font-size:12px;font-family:system-ui,sans-serif}.bar em{float:right}
+.bar{position:relative;height:28px;background:var(--ac2);border-radius:9px;margin:6px 0;overflow:hidden}.bar i{position:absolute;top:0;bottom:0;left:0;background:var(--ac);opacity:.55}.bar span,.bar em{position:relative;padding:0 9px;line-height:28px;font-style:normal;font-size:12px;font-family:system-ui,sans-serif}.bar em{float:right}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
 nav button{flex:1;border:0;font-size:10px;padding:9px 0;background:none;color:var(--mu);cursor:pointer}nav button.on{color:var(--ac);font-weight:700}
-#m{display:none;position:fixed;inset:0;background:#0007;z-index:9;align-items:flex-end}#m.on{display:flex}
+#m{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:#0007;z-index:9;align-items:flex-end}#m.on{display:flex}
 .sh{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:22px 22px 0 0;padding:16px;margin:auto}
 label{display:block;font-size:12px;color:var(--mu);margin:8px 0;font-family:system-ui,sans-serif}
 input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:14px;margin-top:3px}
 input[type=color]{height:38px;padding:2px}.ck input,.lk input{width:22px}
 .st{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--bd)}.st button{border:0;background:none;color:var(--tx);font-size:17px;cursor:pointer}
-#t{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 16px;border-radius:99px;font:13px system-ui;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;display:flex;gap:12px;align-items:center;white-space:nowrap}#t button{background:none;border:0;color:var(--ac2);font-weight:700;font-size:13px;cursor:pointer}#ask{display:none;position:fixed;inset:0;background:#0007;z-index:30;align-items:flex-end}#ask.on{display:flex}.menu{display:block;width:100%;text-align:left;margin:6px 0;padding:14px}
-</style></head><body><main id="v"></main>
+#t{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 16px;border-radius:99px;font:13px system-ui;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;display:flex;gap:12px;align-items:center;white-space:nowrap}#t button{background:none;border:0;color:var(--ac2);font-weight:700;font-size:13px;cursor:pointer}#ask{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:#0007;z-index:30;align-items:flex-end}#ask.on{display:flex}.menu{display:block;width:100%;text-align:left;margin:6px 0;padding:14px}
+</style></head><body><main id="v">Loading…</main>
 <nav id="nv"></nav><div id="m"></div><div id="t"></div><div id="ask"></div>
 <script>
+window.onerror=function(m,u,l){var v=document.getElementById('v');if(v)v.innerHTML='<p style="padding:16px;color:#c33">App error: '+m+' (line '+l+')</p>'};
+
 const K='glowshelf1',CATS=['Skincare','Makeup','Haircare','Fragrance','Tools'],E={Skincare:'🧴',Makeup:'💄',Haircare:'💇',Fragrance:'🌸',Tools:'🪮'};
 let PH='',tt,hp=0,mp=0,ign=0;function toast(m,u){let t=$('#t');t.innerHTML='<span>'+m+'</span>'+(u?'<button id=tu>Undo</button>':'');t.style.opacity=1;t.style.pointerEvents=u?'auto':'none';clearTimeout(tt);tt=setTimeout(()=>{t.style.opacity=0;t.style.pointerEvents='none'},u?7000:2400);if(u)$('#tu').onclick=()=>{u();t.style.opacity=0;t.style.pointerEvents='none'}}window.alert=m=>toast(m);
 let S={p:[],r:[],l:[],pan:[],look:[],h:[]},tab='home',f='All',rt='AM',sub='',q='';
@@ -39,7 +41,7 @@ try{S=Object.assign(S,JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){}
 S.h=S.h||[];S.p.forEach(p=>{if(p.done&&p.qty>0)p.qty=0});try{history.replaceState({tab:'home',sub:''},'')}catch(e){}
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){alert('Storage full. Copy a backup, then remove some photos.')}};
 const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),td=()=>new Date().toISOString().slice(0,10),v=i=>$('#'+i).value;
-const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const P=id=>S.p.find(x=>x.id==id),money=n=>(S.cur||'€')+(+n||0).toFixed(2),val=()=>S.p.reduce((a,p)=>a+p.price*p.qty,0);
 const exp=p=>{let d=[];if(p.expiry)d.push(new Date(p.expiry));if(p.opened&&p.pao){let o=new Date(p.opened);o.setMonth(o.getMonth()+ +p.pao);d.push(o)}return d.length?new Date(Math.min(...d)):null};
 const left=p=>{let e=exp(p);return e?Math.ceil((e-new Date(td()))/864e5):null};
@@ -84,4 +86,4 @@ expiry:()=>{let a=S.p.filter(p=>!p.done&&left(p)!==null).sort((x,y)=>left(x)-lef
 stats:()=>{let by={},sp=0,cn={};S.p.forEach(p=>{if(!p.done)cn[p.cat]=(cn[p.cat]||0)+ +p.qty;if(!inr(p.bought||p.added||td()))return;let n=(+p.qty||0)+(+p.fin||0);sp+=p.price*n;by[p.cat]=(by[p.cat]||0)+p.price*n;});
 let mx=Math.max(1,...Object.values(by)),used=S.h.filter(e=>inr(e.d)).length,ex=S.p.filter(p=>!p.done&&left(p)<0&&inr(exp(p).toISOString().slice(0,10))),exv=ex.reduce((a,p)=>a+p.price*p.qty,0),all=[...S.p].sort((a,b)=>b.price*b.qty-a.price*a.qty);
 const ctl=`<div>${[['month','Month'],['year','Year'],['custom','Custom'],['all','All time']].map(([k,l])=>`<button class="ch ${SP.k==k?'on':''}" onclick="spf('k','${k}')">${l}</button>`).join('')}</div>`+(SP.k=='month'?`<div class=row><button class=sm onclick="spf('m',SP.m-1)">◀</button><b>${MN[SP.m]} ${SP.y}</b><button class=sm onclick="spf('m',SP.m+1)">▶</button></div>`:SP.k=='year'?`<div class=row><button class=sm onclick="spf('y',SP.y-1)">◀</button><b>${SP.y}</b><button class=sm onclick="spf('y',SP.y+1)">▶</button></div>`:SP.k=='custom'?`<div class=g2><label>From<input type=date value="${SP.a}" onchange="SP.a=this.value;render()"></label><label>To<input type=date value="${SP.b}" onchange="SP.b=this.value;render()"></label></div>`:'');
-return `<h1>Statistics</h1>${ctl}<div class=g2 style="margin-top:10px"><div class=c><b>${money(val())}</b><small>On shelf now</small></div><div class=c><b>${money(sp)}</b><small>Spent in period</small></div><div class=c><b>${used}</b><small>Used up in period</small></div><div class=c><b>${ex.lengt
+return `<h1>Statistics</h1>${ctl}<div class=g2 style="margin-top:10px"><div c
